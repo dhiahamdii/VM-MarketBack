@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from ..services.auth import get_current_user
 from ..services.stripe import create_checkout_session, update_payment_status
-from ..models import User, PaymentStatus, Payment
+from ..models import User, Payment, PaymentStatus, PaymentCreate, PaymentUpdate
 from ..database import SessionLocal
 import stripe
 import os

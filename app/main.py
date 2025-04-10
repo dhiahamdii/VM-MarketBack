@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import stripe
 
-from .routers import auth, stripe as stripe_router, test
+from .routers import auth, stripe as stripe_router, test, vm
 from .database import engine, Base
 from .models import User
 import os
@@ -30,6 +30,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(stripe_router.router, prefix="/stripe", tags=["stripe"])
 app.include_router(test.router, prefix="/test", tags=["test"])
+app.include_router(vm.router)
 
 @app.get("/")
 async def root():
