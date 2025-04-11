@@ -10,20 +10,25 @@ import sys
 from dotenv import load_dotenv
 
 # Add the parent directory to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Load environment variables
 load_dotenv()
 
-# Import your models here
+# Import all models to ensure they are detected by Alembic
 from app.models import Base
+from app.models.user import User
+from app.models.virtual_machine import VirtualMachine
+from app.models.payment import Payment
+
+# Import the database URL from your application
 from app.database import SQLALCHEMY_DATABASE_URL
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-# Set the database URL
+# Set the database URL in the alembic.ini file
 config.set_main_option("sqlalchemy.url", SQLALCHEMY_DATABASE_URL)
 
 # Interpret the config file for Python logging.

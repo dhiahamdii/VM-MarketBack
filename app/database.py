@@ -4,14 +4,13 @@ from sqlalchemy.orm import sessionmaker
 import os
 from app.models import Base
 
-# Create database directory if it doesn't exist
-os.makedirs("database", exist_ok=True)
-
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+# PostgreSQL connection URL
+SQLALCHEMY_DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres:postgres@localhost:5432/vm_marketplace"
 )
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Create all tables

@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
 from ..services.auth import get_current_user
-from ..services.stripe import create_checkout_session, update_payment_status
+from ..services.stripe import create_payment_intent, update_payment_status, create_checkout_session
 from ..models import User, Payment, PaymentStatus, PaymentCreate, PaymentUpdate
 from ..database import SessionLocal
 import stripe
 import os
 import logging
 from dotenv import load_dotenv
+from typing import Dict
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,45 +18,29 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
 router = APIRouter()
 
-@router.post("/create-test-product")
-async def create_test_product(current_user: User = Depends(get_current_user)):
-    """
-    Create a test product in Stripe
-    """
-    try:
-        # Create a test product
-        product = stripe.Product.create(
-            name="Test VM Instance",
-            description="A test virtual machine instance",
-        )
-
-        # Create a price for the product
-        price = stripe.Price.create(
-            product=product.id,
-            unit_amount=1000,  # $10.00
-            currency="usd",
-        )
-
-        return {
-            "product_id": product.id,
-            "price_id": price.id,
-            "amount": 1000,
-            "currency": "usd"
-        }
-    except Exception as e:
-        logger.error(f"Error creating test product: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/create-checkout-session")
-async def create_stripe_checkout_session(
-    product_id: str,
-    price: int,
+@router.post("/create-payment-intent")
+async def create_stripe_payment_intent(
+    amount: int,
+    currency: str,
+    metadata: Dict,
     current_user: User = Depends(get_current_user)
 ):
     """
-    Create a new Stripe checkout session for a product.
+    Create a new Stripe payment intent.
     """
-    return create_checkout_session(product_id, price, current_user.id)
+    return create_payment_intent(amount, currency, metadata, current_user.id)
+
+@router.post("/create-checkout-session")
+async def create_stripe_checkout_session(
+    amount: int,
+    currency: str,
+    metadata: Dict,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Create a new Stripe checkout session.
+    """
+    return create_checkout_session(amount, currency, metadata, current_user.id)
 
 @router.get("/payment-status/{payment_id}")
 async def get_payment_status(
@@ -111,11 +96,10 @@ async def stripe_webhook(request: Request):
 
     logger.info(f"Received Stripe webhook event: {event['type']}")
 
-    if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        payment_intent = session.payment_intent
-        update_payment_status(payment_intent, PaymentStatus.COMPLETED)
-        logger.info(f"Payment completed for session {session.id}")
+    if event['type'] == 'payment_intent.succeeded':
+        payment_intent = event['data']['object']
+        update_payment_status(payment_intent['id'], PaymentStatus.COMPLETED)
+        logger.info(f"Payment completed for payment intent {payment_intent['id']}")
     elif event['type'] == 'payment_intent.payment_failed':
         payment_intent = event['data']['object']
         update_payment_status(payment_intent['id'], PaymentStatus.FAILED)

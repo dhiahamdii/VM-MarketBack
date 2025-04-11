@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Enum
+from sqlalchemy import Column, Integer, String, Float, DateTime, Enum, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from enum import Enum as PyEnum
 from pydantic import BaseModel, ConfigDict
@@ -21,6 +22,10 @@ class Payment(Base):
     status = Column(String, default=PaymentStatus.PENDING)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Add foreign key to User
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user = relationship("User", back_populates="payments")
 
 # Pydantic models
 class PaymentBase(BaseModel):

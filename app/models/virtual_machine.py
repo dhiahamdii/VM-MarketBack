@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, JSON
+from sqlalchemy import Column, Integer, String, Float, DateTime, JSON, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
@@ -26,6 +27,10 @@ class VirtualMachine(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     tags = Column(JSON)  # Store tags/categories as JSON array
+    
+    # Add foreign key to User
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    owner = relationship("User", back_populates="virtual_machines")
 
 # Pydantic models for API
 class VMSpecifications(BaseModel):
